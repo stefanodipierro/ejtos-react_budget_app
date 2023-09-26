@@ -1,9 +1,12 @@
+// AppContext.js
 import React, { createContext, useReducer } from 'react';
 
 // 5. The reducer - this is used to update the state, based on the action
 export const AppReducer = (state, action) => {
     let budget = 0;
     switch (action.type) {
+
+        
         case 'ADD_EXPENSE':
             let total_budget = 0;
             total_budget = state.expenses.reduce(
@@ -30,6 +33,33 @@ export const AppReducer = (state, action) => {
                     ...state
                 }
             }
+
+            case 'SUBTRACT_EXPENSE':
+                let total_budget_sub = 0;
+                total_budget_sub = state.expenses.reduce(
+                    (previousExp, currentExp) => {
+                        return previousExp + currentExp.cost
+                    },0
+                );
+                total_budget_sub = total_budget_sub - action.payload.cost;
+                action.type = "DONE";
+                if(total_budget_sub >= 0) {
+                    total_budget_sub = 0;
+                    state.expenses.map((currentExp)=> {
+                        if(currentExp.name === action.payload.name) {
+                            currentExp.cost = currentExp.cost - action.payload.cost;
+                        }
+                        return currentExp
+                    });
+                    return {
+                        ...state,
+                    };
+                } else {
+                    alert("Cannot decrease the allocation! Out of funds");
+                    return {
+                        ...state
+                    }
+                }
             case 'RED_EXPENSE':
                 const red_expenses = state.expenses.map((currentExp)=> {
                     if (currentExp.name === action.payload.name && currentExp.cost - action.payload.cost >= 0) {
@@ -59,7 +89,20 @@ export const AppReducer = (state, action) => {
             };
         case 'SET_BUDGET':
             action.type = "DONE";
-            state.budget = action.payload;
+            let newBudget = action.payload;
+            const totalExpenses = state.expenses.reduce((total, item) => total + item.cost, 0);
+        // set the budget
+            if (newBudget < totalExpenses) {
+                alert("New budget cant be less than the current expenses");
+                return {
+                    ...state,
+                };
+            }
+            if (newBudget < 0) newBudget = 0;
+
+            if (newBudget > 20000) newBudget = 20000;
+
+            state.budget = newBudget;
 
             return {
                 ...state,
@@ -86,7 +129,7 @@ const initialState = {
         { id: "Human Resource", name: 'Human Resource', cost: 40 },
         { id: "IT", name: 'IT', cost: 500 },
     ],
-    currency: '£'
+    currency: '$'
 };
 
 // 2. Creates the context this is the thing our components import and use to get the state
